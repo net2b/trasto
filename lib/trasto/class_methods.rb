@@ -8,6 +8,18 @@ module Trasto
       @fallbacks_for_empty_translations[name.to_sym]
     end
 
+    def translated_attribute_names
+      translatable_columns
+    end
+
+    def create_translation_table!(*)
+      #noop
+    end
+
+    def add_translation_fields!(*)
+      #noop
+    end
+
     private
 
     def locale_name(locale)
