@@ -4,6 +4,10 @@ module Trasto
       translatable_columns.include?(column.to_sym)
     end
 
+    def fallbacks_for_empty_translations_for?(name)
+      @fallbacks_for_empty_translations[name.to_sym]
+    end
+
     private
 
     def locale_name(locale)

@@ -1,6 +1,6 @@
 module Trasto
   module Translates
-    def translates(*columns)
+    def translates(*columns, fallbacks_for_empty_translations: false)
       extend Trasto::ClassMethods
       include Trasto::InstanceMethods
 
@@ -13,12 +13,15 @@ module Trasto
 
       self.translatable_columns |= columns.map(&:to_sym)
 
-      columns.each { |column| define_localized_attribute(column) }
+      columns.each { |column| define_localized_attribute(column, fallbacks_for_empty_translations: fallbacks_for_empty_translations) }
     end
 
     private
 
-    def define_localized_attribute(column)
+    def define_localized_attribute(column, fallbacks_for_empty_translations: false)
+      @fallbacks_for_empty_translations ||= {}
+      @fallbacks_for_empty_translations[column.to_sym] = fallbacks_for_empty_translations
+
       define_method(column) do
         read_localized_value(column)
       end

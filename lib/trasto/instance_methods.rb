@@ -18,6 +18,7 @@ module Trasto
     end
 
     def locales_for_reading_column(column)
+      return [I18n.locale] unless self.class.fallbacks_for_empty_translations_for?(column)
       send("#{column}_i18n").keys.sort_by do |locale|
         case locale.to_sym
         when I18n.locale then '0'
