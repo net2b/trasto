@@ -26,6 +26,8 @@ module Trasto
       columns.each do |column|
         define_localized_attribute(column, fallbacks_for_empty_translations: fallbacks_for_empty_translations)
       end
+
+      before_validation :write_default_i18n_values
     end
 
     private

@@ -26,9 +26,7 @@ module Trasto
       return super(name, value) if locale.nil? or not(translated_column)
 
       write_localized_value(name, value, locale: locale)
-
-      default_value = read_localized_value(name, locale: I18n.default_locale)
-      write_attribute(name, default_value, locale: nil)
+      write_default_value(name, value)
 
       value
     end
@@ -41,11 +39,18 @@ module Trasto
       value
     end
 
+    def write_default_i18n_values
+      self.class.translated_attribute_names.each do |name|
+        translations_hash = translation_hash_for_column(name)
+        write_default_value(name, translations_hash[I18n.default_locale] || translations_hash.values.first)
+      end
+    end
+
 
     private
 
     def translation_hash_for_column(column)
-      (send("#{column}_i18n") || {})
+      (send("#{column}_i18n") || {}).with_indifferent_access
     end
 
     def read_localized_value(column, locale:)
@@ -61,6 +66,29 @@ module Trasto
     def write_localized_value(column, value, locale:)
       translations_hash = translation_hash_for_column(column)
       send("#{column}_i18n=", translations_hash.merge(locale => value).with_indifferent_access)
+    end
+
+    def write_default_value(name, value)
+      default_value = read_localized_value(name, locale: I18n.default_locale) || value
+
+      # COPIED FROM GLOBALIZE
+      # Dirty tracking, paraphrased from
+      # ActiveRecord::AttributeMethods::Dirty#write_attribute.
+      name_str = name.to_s
+      if attribute_changed?(name_str)
+        # If there's already a change, delete it if this undoes the change.
+        old = changed_attributes[name_str]
+        @changed_attributes.delete(name_str) if value == old
+      else
+        # If there's not a change yet, record it.
+        # WAS: old = globalize.fetch(options[:locale], name)
+        old = read_attribute(name, locale: nil)
+        old = old.dup if old.duplicable?
+        @changed_attributes[name_str] = old if value != old
+      end
+      # END OF COPY
+
+      write_attribute(name, default_value, locale: nil)
     end
 
     def translation_for(locale, _build_if_missing = true)
