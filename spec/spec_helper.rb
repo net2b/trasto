@@ -19,6 +19,8 @@ require 'pry'
 
 ActiveRecord::Base.establish_connection adapter: 'postgresql', database: 'trasto-test'
 
+# ActiveRecord::Base.logger = Logger.new(STDOUT)
+
 I18n.enforce_available_locales = false
 
 silence_stream(STDOUT) do
