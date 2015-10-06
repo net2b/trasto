@@ -8,7 +8,11 @@ module Trasto
   extend self
 
   def supports_hstore?
-    ActiveRecord::Base.configurations[Rails.env]["adapter"] == "postgresql"
+    adapter = if ActiveRecord::Base.connected?
+      ActiveRecord::ConnectionAdapters::PostgreSQLAdapter === ActiveRecord::Base.connection
+    else
+      ActiveRecord::Base.configurations[Rails.env]["adapter"].to_sym == :postgresql
+    end
   end
 
   @fallbacks = []
