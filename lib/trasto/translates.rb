@@ -39,11 +39,11 @@ module Trasto
       localized_accessor column, locales: (accessor_locales || I18n.available_locales)
 
       define_method(column) do
-        read_attribute(column, locale: I18n.locale)
+        trasto_read_attribute(column, locale: I18n.locale)
       end
 
       define_method("#{column}=") do |value|
-        write_attribute(column, value, locale: I18n.locale)
+        trasto_write_attribute(column, value, locale: I18n.locale)
       end
     end
   end

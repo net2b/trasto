@@ -25,25 +25,14 @@ module Trasto
       raise attributes.inspect
     end
 
-    def write_attribute(name, value, locale: I18n.locale)
-      translated_column = self.class.translates?(name)
-      return super(name, value) if locale.nil? or not(translated_column)
-
+    def trasto_write_attribute(name, value, locale: I18n.locale)
       write_localized_value(name, value, locale: locale)
       write_default_value(name, value)
-
       value
     end
 
-    def read_attribute(name, locale: I18n.locale, &block)
-      translated_column = self.class.translates?(name)
-      # p [:read_attribute, read: name, locale: locale, block: block, translates: translated_column]
-      return super(name, &block) if locale.nil? or not(translated_column)
-
-      value = read_localized_value(name, locale: locale)#.tap(&block)
-      # p [:read_attribute, value: value]
-      # value or block.call(name) if block_given?
-      value
+    def trasto_read_attribute(name, locale: I18n.locale)
+      read_localized_value(name, locale: locale)
     end
 
     def write_default_i18n_values
@@ -61,9 +50,8 @@ module Trasto
     end
 
     def read_localized_value(column, locale:, fallback: :auto)
-      i18n_name = "#{column}_i18n"
-      return nil unless (column_value = send(i18n_name))
-
+      i18n_name      = "#{column}_i18n"
+      column_value   = send(i18n_name) || {}
       current_locale = (locale || I18n.locale).to_s
       default_locale = I18n.default_locale.to_s
 
@@ -80,7 +68,7 @@ module Trasto
         return value if value.present?
       end
 
-      nil
+      read_attribute(column) if fallback # fallback to the default value
     end
 
     def write_localized_value(column, value, locale:)
@@ -102,13 +90,13 @@ module Trasto
       else
         # If there's not a change yet, record it.
         # WAS: old = globalize.fetch(options[:locale], name)
-        old = read_attribute(name, locale: nil)
+        old = read_attribute(name)
         old = old.dup if old.duplicable?
         @changed_attributes[name_str] = old if value != old
       end
       # END OF COPY
 
-      write_attribute(name, default_value, locale: nil)
+      write_attribute(name, default_value)
     end
 
     def translation_for(locale, _build_if_missing = true)

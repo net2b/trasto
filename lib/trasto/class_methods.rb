@@ -15,15 +15,14 @@ module Trasto
 
     def localized_accessor name, locales: I18n.available_locales
       locales.each do |locale|
-        name = name.to_s.parameterize.underscore
-        locale = locale.to_s.parameterize.underscore
+        method_name = "#{name}_#{locale}".parameterize.underscore
 
-        define_method "#{name}_#{locale}" do
+        define_method method_name do
           read_localized_value name, locale: locale, fallback: false
         end
 
-        define_method "#{name}_#{locale}=" do |value|
-          write_localized_value name, locale: locale
+        define_method "#{method_name}=" do |value|
+          write_localized_value name, value, locale: locale
         end
       end
     end

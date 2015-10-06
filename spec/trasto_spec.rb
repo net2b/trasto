@@ -106,3 +106,19 @@ describe Post, '#title=' do
     expect(post.title_i18n['de']).to eq('Hallo')
   end
 end
+
+describe Post, '#update_column' do
+  before do
+    Post.translates :title, fallbacks_for_empty_translations: true
+    I18n.locale = :de
+  end
+
+  let(:post) { Post.create! }
+
+  it 'should use the default column as default' do
+    post.update_column :title, 'Hallo'
+    expect(post.title).to eq('Hallo')
+    expect(post.title_de).to eq(nil)
+    expect(post.title_en).to eq(nil)
+  end
+end
