@@ -26,7 +26,9 @@ silence_stream(STDOUT) do
     execute 'CREATE EXTENSION IF NOT EXISTS hstore'
 
     create_table :posts, force: true do |t|
+      t.string :title
       t.hstore :title_i18n
+      t.text :body
       t.hstore :body_i18n
     end
   end

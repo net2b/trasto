@@ -4,24 +4,24 @@ describe ActiveRecord::Base, '.translates' do
   end
 
   it 'should add functionality' do
-    expect(Post.new).not_to respond_to :title
+    expect(Post.new).not_to respond_to :title_en
     Post.translates :title
-    expect(Post.new).to respond_to :title
+    expect(Post.new).to respond_to :title_en
   end
 
   it 'should be possible to run more than once' do
-    expect(Post.new).not_to respond_to :title, :body
+    expect(Post.new).not_to respond_to :title_en, :body_en
     Post.translates :title
     Post.translates :body
-    expect(Post.new).to respond_to :title, :body
+    expect(Post.new).to respond_to :title_en, :body_en
   end
 
   it 'inherits columns from the superclass' do
     Post.translates :title
     SubPost.translates :body
-    expect(SubPost.new).to respond_to :title, :body
-    expect(Post.new).to respond_to :title
-    expect(Post.new).not_to respond_to :body
+    expect(SubPost.new).to respond_to :title_en, :body_en
+    expect(Post.new).to respond_to :title_en
+    expect(Post.new).not_to respond_to :body_en
   end
 end
 
@@ -48,23 +48,23 @@ describe Post, '.translatable_columns' do
 end
 
 describe Post, '#title' do
-  let(:post) { Post.new(title_i18n: { de: 'Hallo', en: 'Hello', sv: 'Hej' }) }
+  let(:post) { Post.new(title_i18n: { de: 'Hallo', en: 'Hello', sv: 'Hej' }.with_indifferent_access) }
 
   before do
-    Post.translates :title
+    Post.translates :title, fallbacks_for_empty_translations: true
     I18n.locale = :en
     I18n.default_locale = :de
-
-    post.title_i18n = post.title_i18n.with_indifferent_access
   end
 
   it 'should give the title in the current locale' do
     expect(post.title).to eq('Hello')
+    expect(post.title_en).to eq('Hello')
   end
 
   it 'should fall back to the default locale if locale has entry' do
     I18n.locale = :ru
     expect(post.title).to eq('Hallo')
+    expect(post.title_de).to eq('Hallo')
   end
 
   it 'should fall back to the default locale if blank' do
@@ -73,6 +73,7 @@ describe Post, '#title' do
   end
 
   it 'should fall back to any other locale if default locale is blank' do
+    skip "This is not a feature to me –Elia"
     post.title_i18n['en'] = ' '
     post.title_i18n['de'] = ''
     expect(post.title).to eq('Hej')

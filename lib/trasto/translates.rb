@@ -1,6 +1,6 @@
 module Trasto
   module Translates
-    def translates(*columns, fallbacks_for_empty_translations: false)
+    def translates(*columns, fallbacks_for_empty_translations: false, accessor_locales: nil)
       extend Trasto::ClassMethods
       include Trasto::InstanceMethods
 
@@ -24,7 +24,7 @@ module Trasto
       self.translatable_columns |= columns.map(&:to_sym)
 
       columns.each do |column|
-        define_localized_attribute(column, fallbacks_for_empty_translations: fallbacks_for_empty_translations)
+        define_localized_attribute(column, fallbacks_for_empty_translations: fallbacks_for_empty_translations, accessor_locales: accessor_locales)
       end
 
       before_validation :write_default_i18n_values
@@ -32,18 +32,19 @@ module Trasto
 
     private
 
-    def define_localized_attribute(column, fallbacks_for_empty_translations: false)
+    def define_localized_attribute(column, fallbacks_for_empty_translations: false, accessor_locales: nil)
       @fallbacks_for_empty_translations ||= {}
       @fallbacks_for_empty_translations[column.to_sym] = fallbacks_for_empty_translations
 
-      # define_method(column) do
-      #   read_localized_value(column, locale: I18n.locale)
-      # end
-      #
-      # define_method("#{column}=") do |value|
-      #   write_attribute(column, value) if read_attribute(column).blank? or I18n.locale == I18n.default_locale
-      #   write_localized_value(column, value, locale: I18n.locale)
-      # end
+      localized_accessor column, locales: (accessor_locales || I18n.available_locales)
+
+      define_method(column) do
+        read_attribute(column, locale: I18n.locale)
+      end
+
+      define_method("#{column}=") do |value|
+        write_attribute(column, value, locale: I18n.locale)
+      end
     end
   end
 end

@@ -21,8 +21,12 @@ module Trasto
       end
     end
 
+    def translations_attributes= attributes
+      raise attributes.inspect
+    end
+
     def write_attribute(name, value, locale: I18n.locale)
-      translated_column = self.class.translated_attribute_names.include?(name.to_sym)
+      translated_column = self.class.translates?(name)
       return super(name, value) if locale.nil? or not(translated_column)
 
       write_localized_value(name, value, locale: locale)
@@ -32,9 +36,12 @@ module Trasto
     end
 
     def read_attribute(name, locale: I18n.locale, &block)
-      translated_column = self.class.translated_attribute_names.include?(name.to_sym)
+      translated_column = self.class.translates?(name)
+      # p [:read_attribute, read: name, locale: locale, block: block, translates: translated_column]
       return super(name, &block) if locale.nil? or not(translated_column)
+
       value = read_localized_value(name, locale: locale)#.tap(&block)
+      # p [:read_attribute, value: value]
       # value or block.call(name) if block_given?
       value
     end
@@ -53,13 +60,28 @@ module Trasto
       (send("#{column}_i18n") || {}).with_indifferent_access
     end
 
-    def read_localized_value(column, locale:)
-      return nil unless (column_value = send("#{column}_i18n"))
+    def read_localized_value(column, locale:, fallback: :auto)
+      i18n_name = "#{column}_i18n"
+      return nil unless (column_value = send(i18n_name))
 
-      locales_for_reading_column(column, locale: locale).each do |locale|
+      current_locale = (locale || I18n.locale).to_s
+      default_locale = I18n.default_locale.to_s
+      # p [:read_localized_value, fallback: fallback, current_locale: current_locale, default_locale: default_locale]
+      fallback = self.class.fallbacks_for_empty_translations_for?(column) if fallback == :auto
+
+      if fallback
+        locales = [current_locale, default_locale]
+      else
+        locales = [current_locale]
+      end
+
+      # p [:read_localized_value, fallback: fallback, locales: locales, column_value: column_value]
+
+      locales.each do |locale|
         value = column_value[locale]
         return value if value.present?
       end
+
       nil
     end
 
@@ -98,20 +120,6 @@ module Trasto
         model.send(:"#{column}=", value)
       end
       model
-    end
-
-    def locales_for_reading_column(column, locale: nil)
-      current_locale ||= I18n.locale
-      default_locale = I18n.default_locale
-      return [current_locale] unless self.class.fallbacks_for_empty_translations_for?(column)
-
-      send("#{column}_i18n").keys.sort_by do |locale|
-        case locale.to_sym
-        when current_locale then '0'
-        when default_locale then '1'
-        else locale.to_s
-        end
-      end
     end
 
     def locales_for_columns
