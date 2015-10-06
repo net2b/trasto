@@ -66,7 +66,7 @@ module Trasto
 
       current_locale = (locale || I18n.locale).to_s
       default_locale = I18n.default_locale.to_s
-      # p [:read_localized_value, fallback: fallback, current_locale: current_locale, default_locale: default_locale]
+
       fallback = self.class.fallbacks_for_empty_translations_for?(column) if fallback == :auto
 
       if fallback
@@ -74,8 +74,6 @@ module Trasto
       else
         locales = [current_locale]
       end
-
-      # p [:read_localized_value, fallback: fallback, locales: locales, column_value: column_value]
 
       locales.each do |locale|
         value = column_value[locale]
